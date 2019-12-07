@@ -1,43 +1,55 @@
-/*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-'use strict';
 /**
- * Write your transction processor functions here
- */
-
-/**
- * Sample transaction
- * @param {org.supplaychain.network.SampleTransaction} sampleTransaction
+ * Initiate PO from one trader to another 
+ * @param {org.supplychain.network.InitiatePO} InitiatePO - the InitiatePO to be processed
  * @transaction
  */
-async function sampleTransaction(tx) {
-    // Save the old value of the asset.
-    const oldValue = tx.asset.value;
 
-    // Update the asset with the new value.
-    tx.asset.value = tx.newValue;
-
-    // Get the asset registry for the asset.
-    const assetRegistry = await getAssetRegistry('org.supplaychain.network.SampleAsset');
-    // Update the asset in the asset registry.
-    await assetRegistry.update(tx.asset);
-
-    // Emit an event for the modified asset.
-    let event = getFactory().newEvent('org.supplaychain.network', 'SampleEvent');
-    event.asset = tx.asset;
-    event.oldValue = oldValue;
-    event.newValue = tx.newValue;
-    emit(event);
-}
+function initiatePurchaseOrder(InitiatePO){
+    console.log('start of initiate PO function');
+    var factory = getFactory();
+    var NS = 'org.supplychain.network';
+    var me = getCurrentParticipant();
+    
+    // newResource(namespace, asset , primarykey)
+    var order = factory.newResource(NS, 'PO', InitiatePO.orderId);
+    order.itemList = InitiatePO.itemList;
+    if(order.orderTotalPrice){
+      order.orderTotalPrice = InitiatePO.orderTotalPrice;
+    }
+    
+    order.orderStatus = 'INITIATED';
+    order.orderer = me;
+    order.vendor = InitiatePO.vendor;
+    
+    // getFullyQualifiedType() get the type of 'order'
+    return getAssetRegistry(order.getFullyQualifiedType()).then(function(assetRegistry){
+      return assetRegistry.add(order);
+    }); 
+  }
+  
+  /**
+   * Track a trade of a commodity from trader to another 
+   * @param {org.supplychain.network.TransferCommodity} trade 
+   * @transaction
+   */
+  
+  function transferCommodity(trade){
+    console.log('start function transfer commodity');
+    var NS = 'org.supplychain.network';
+    var me = getCurrentParticipant();
+    var factory = getFactory();
+    
+    trade.commodity.issuer = me;
+    trade.commodity.owner = trade.newOwner;
+    trade.commodity.purchaseOrder = trade.purchaseOrder; 
+    
+    var newTrace = factory.newConcept(NS, 'Trace');
+    newTrace.timestamp = new Date();
+    newTrace.location = trade.shipperLocation;
+    newTrace.company = me;
+    trade.commodity.trace.push(newTrace);
+    
+    return getAssetRegistry('org.supplychain.network.Commodity').then(function(assetRegistry){
+      return assetRegistry.update(trade.commodity);
+    });
+  }

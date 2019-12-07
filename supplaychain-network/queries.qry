@@ -1,0 +1,38 @@
+/**
+ * New query file
+ */
+
+query Q1 {
+  description: "select all commodities"
+  statement: SELECT org.supplychain.network.Commodity
+}
+
+query Q2 {
+  description: "select all POs"
+  statement: SELECT org.supplychain.network.PO
+}
+
+query Q3 {
+  description: "select all manufacturers"
+  statement: SELECT org.supplychain.network.Manufacturer
+}
+
+query Q4 {
+  description: "select all suppliers"
+  statement: SELECT org.supplychain.network.Supplier
+}
+
+query Q5 {
+  description: "select all Distributors"
+  statement: SELECT org.supplychain.network.Distributor
+}
+
+query Q6 {
+  description: "select all retailers"
+  statement: SELECT org.supplychain.network.Retailer
+}
+
+query Q7 {
+  description: "select all customers"
+  statement: SELECT org.supplychain.network.Customer
+}
